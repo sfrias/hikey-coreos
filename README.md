@@ -1,19 +1,30 @@
 #ARM64 HiKey CoreOS Notes
 
-2015.09.09
+2015.09.10
 
 ##Info
 
 The releases here are unofficial ARM64 CoreOS disk images that I've build for testing CoreOS on the 96boards HiKey developer board.  For info on the HiKey board see https://www.96boards.org/products/ce/hikey/.
 
-##Setup
+##SD Card Setup
 
 Need 2.0 GiB or larger Micro SD card for HiKey.
 
     cat hikey-coreos-${version}.img.xz | xz -d > hikey-coreos-${version}.img
     dd if=hikey-coreos-${version}.img of=/dev/sdX bs=4M oflag=sync
 
-If not installed, install Linaro UEFI firmware and grub bootloader to the HiKey.  The versions below work for me.  Other versions may or may not work.  See https://github.com/96boards/documentation/wiki/HiKeyUEFI.
+##eMMC Setup
+
+If not installed, install Linaro UEFI firmware and Grub bootloader to the HiKey.  See https://github.com/96boards/documentation/wiki/HiKeyUEFI.
+
+The versions below work for me (I use uart0).  Other versions may or may not work.  I tried the uefi/63 build and it could boot OK, but I think grub is on uart3.
+
+You can try my program-hikey utility which does the same as the commands below.
+
+If, when trying to program the system partition, fastboot hangs or you get errors with the UEFI firmware, try this sequence to use the fastboot loader to program the system partition first:
+
+    program-hikey --firmware --boot --system --fastboot
+    program-hikey --firmware --boot --uefi
 
 Download the needed files from http://builds.96boards.org/.
 

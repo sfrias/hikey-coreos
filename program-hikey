@@ -1,0 +1,138 @@
+#! /bin/bash
+
+die() {
+	echo "(${1}) ERROR: command failed"
+	exit 1
+}
+
+jump_flash() {
+	echo "set jumper AUTO PWR - 1-2 - on"
+	echo "set jumper BOOT SEL - 3-4 - on"
+	echo "set jumper GPIO3 1  - 5-6 - off"
+}
+
+jump_fastboot() {
+	echo "set jumper AUTO PWR - 1-2 - on"
+	echo "set jumper BOOT SEL - 3-4 - off"
+	echo "set jumper GPIO3 1  - 5-6 - on"
+}
+
+jump_boot() {
+	echo "set jumper AUTO PWR - 1-2 - on"
+	echo "set jumper BOOT SEL - 3-4 - off"
+	echo "set jumper GPIO3 1  - 5-6 - off"
+}
+
+usage() {
+	echo "program-hikey" >&2
+	echo "OPTIONS" >&2
+	echo "     -b, --boot" >&2
+	echo "             Program the eMMC boot partition (boot)." >&2
+	echo "     -f, --firmware" >&2
+	echo "             Program the eMMC firmware partitions (ptable, fastboot, nvme, mcuimage)." >&2
+	echo "     -h, --help" >&2
+	echo "             Print a help message." >&2
+	echo "     -s, --system" >&2
+	echo "             Program the eMMC system partition (system)." >&2
+	echo "     -t, --fastboot" >&2
+	echo "             Use the fastboot firmware and bootloader." >&2
+	echo "     -u, --uefi" >&2
+	echo "             Use the UEFI firmware and Grub bootloader." >&2
+	
+	exit 1
+}
+
+fw_type="none"
+fw="n"
+boot="n"
+system="n"
+
+if [[ $# -eq 0 ]]; then
+	usage
+fi
+
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+	-b | --boot)
+		boot="y"
+		;;
+	-f | --firmware)
+		fw="y"
+		;;
+	-s | --system)
+		system="y"
+		;;
+	-t | --fastboot)
+		fw_type="fastboot"
+		;;
+	-u | --uefi)
+		fw_type="uefi"
+		;;
+	*)
+		usage
+		;;
+	esac
+	shift
+done
+
+if [[ "${fw_type}" == "none" ]] && [[ "${fw}" == "y" || "${boot}" == "y" ]]; then
+	echo "ERROR: Need firmware type." >&2
+	usage
+fi
+
+. "$(dirname "${0}")/program-include" || exit 1
+
+if [[ ${fw} == "y" ]]; then
+	jump_flash
+	echo "Writing to firmware: '${fw_type}'"
+
+	case ${fw_type} in
+	"fastboot" )
+		sudo python ${utils}/hisi-idt.py -d ${device} --img1 "${firmware_path}/fastboot1.img" --img2 "${firmware_path}/fastboot2.img" || die $LINENO
+		echo "sleep 10 seconds to allow fastboot stub to start in ram"
+		sleep 10
+		sudo fastboot flash ptable "${firmware_path}/ptable-linux.img" || die $LINENO
+		sudo fastboot flash fastboot1 "${firmware_path}/fastboot1.img" || die $LINENO
+		sudo fastboot flash fastboot "${firmware_path}/fastboot2.img" || die $LINENO
+		sudo fastboot flash nvme ${firmware_path}/nvme.img || die $LINENO
+		sudo fastboot flash mcuimage ${firmware_path}/mcuimage.bin || die $LINENO
+		;;
+	"uefi" )
+		sudo python ${utils}/hisi-idt.py -d ${device} --img1="${uefi_path}/l-loader.bin" || die $LINENO
+		sleep 2
+		sudo fastboot flash ptable "${uefi_path}/ptable-linux.img" || die $LINENO
+		sudo fastboot flash fastboot "${uefi_path}/fip.bin" || die $LINENO
+		sudo fastboot flash nvme ${firmware_path}/nvme.img || die $LINENO
+		;;
+	* )
+		;;
+	esac
+fi
+
+if [[ "${boot}" == "y" ]]; then
+	[[ ${fw} == "y" ]] || jump_fastboot
+
+	case ${fw_type} in
+	"fastboot" )
+		boot_image=${fb_boot_image}
+		;;
+	"uefi" )
+		boot_image=${uefi_boot_image}
+		;;
+	* )
+		;;
+	esac
+
+	echo "Writing to boot: ${boot_image}"
+	sudo fastboot flash boot ${boot_image} || die $LINENO
+fi
+
+if [[ "${system}" == "y" ]]; then
+	[[ ${fw} == "y"  || "${boot}" == "y" ]] || jump_fastboot
+	echo "Writing to system: ${system_image}"
+	sudo fastboot flash system ${system_image} || die $LINENO
+fi
+
+sudo fastboot reboot
+
+jump_boot
