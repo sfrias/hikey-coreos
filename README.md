@@ -1,6 +1,6 @@
 #ARM64 HiKey CoreOS Notes
 
-2015.09.10
+2015.10.09
 
 ##Info
 
@@ -15,48 +15,43 @@ Need 2.0 GiB or larger Micro SD card for HiKey.
 
 ##eMMC Setup
 
-If not installed, install Linaro UEFI firmware and Grub bootloader to the HiKey.  See https://github.com/96boards/documentation/wiki/HiKeyUEFI.
+If not installed, install Linaro UEFI firmware, Grub bootloader, and a debian system image to the HiKey eMMC.  See https://github.com/96boards/documentation/wiki/HiKeyUEFI and https://github.com/96boards/documentation/wiki/LatestSnapshots.
 
-The versions below work for me (I use uart0).  Other versions may or may not work.  I tried the uefi/63 build and it could boot OK, but I think grub is on uart3.
+Download the needed files from:
 
-You can try my program-hikey utility which does the same as the commands below.
+    http://builds.96boards.org/snapshots/hikey/linaro/uefi/75/
+    http://builds.96boards.org/snapshots/hikey/linaro/debian/354/
+
+These versions work for me (I now have my RS232C converter connected to the HiKey UART_3/ttyAMA3).  Other versions may or may not work.  The debian install on eMMC will be for setup and recovery.
+
+You can try my program-hikey utility if you like.  You'll need to set the builds_root variable.  This command should install everything needed to boot to debian from the eMMC:
+
+    program-hikey --firmware --boot --system
 
 If, when trying to program the system partition, fastboot hangs or you get errors with the UEFI firmware, try this sequence to use the fastboot loader to program the system partition first:
 
     program-hikey --firmware --boot --system --fastboot
-    program-hikey --firmware --boot --uefi
-
-Download the needed files from http://builds.96boards.org/.
-
-With pins 3-4 jumpered:
-
-    python hisi-idt.py -d /dev/ttyUSB1 --img1=builds.96boards.org/snapshots/hikey/linaro/uefi/46/l-loader.bin
-    fastboot flash ptable builds.96boards.org/snapshots/hikey/linaro/uefi/46/ptable-linux.img
-    fastboot flash fastboot builds.96boards.org/snapshots/hikey/linaro/uefi/46/fip.bin
-    fastboot flash nvme builds.96boards.org/releases/hikey/linaro/binaries/15.06/nvme.img
-    fastboot reboot
-    
-With pins 5-6 jumpered:
-
-    fastboot flash boot builds.96boards.org/snapshots/hikey/linaro/debian/339/boot-fat.uefi.img
-    fastboot flash system builds.96boards.org/releases/hikey/linaro/debian/15.06/hikey-jessie_developer_20150701-323.emmc.img
-    fastboot reboot
+    program-hikey --firmware --boot
 
 ##Grub menu
 
 Boot the Hikey without an SD card installed or choose the grub 'eMMC' boot option.  Add a CoreOS menu item like the following to the eMMC grub config file:
 
-    hikey ~ # mkdir /tmp/grub
-    hikey ~ # mount /dev/mmcblk0p6 /tmp/grub/
-    hikey ~ # vi /tmp/grub/grub/grub.cfg
+    debian # vi /boot/grub/grub.cfg
 
     menuentry 'CoreOS: SD Card' {
     set root='hd1,1'
-    linux /coreos/vmlinuz-a console=ttyAMA0,115200 console=ttyAMA3,115200 earlycon=pl011,0xf8015000 root=/dev/mmcblk1p9 rootwait ro efi=noruntime
+    linux /coreos/vmlinuz-a console=tty0 console=ttyAMA3,115200 earlycon=pl011,0xf7113000 root=/dev/mmcblk1p9 rootwait ro efi=noruntime
     devicetree /coreos/hi6220-hikey.dtb
     }
 
 I recommend you increase the grub.cfg 'timeout' value, and maybe set the 'default' to your 'CoreOS: SD Card' entry.
+
+You can edit the eMMC grub config from CoreOS with something like:
+
+    coreos # mkdir /tmp/grub
+    coreos # mount /dev/mmcblk0p6 /tmp/grub/
+    coreos # vi /tmp/grub/grub/grub.cfg
 
 ##Start Up
 

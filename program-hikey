@@ -1,23 +1,23 @@
-#! /bin/bash
+#! /bin/bash -x
 
 die() {
 	echo "(${1}) ERROR: command failed"
 	exit 1
 }
 
-jump_flash() {
+jumpers_flash() {
 	echo "set jumper AUTO PWR - 1-2 - on"
 	echo "set jumper BOOT SEL - 3-4 - on"
 	echo "set jumper GPIO3 1  - 5-6 - off"
 }
 
-jump_fastboot() {
+jumpers_fastboot() {
 	echo "set jumper AUTO PWR - 1-2 - on"
 	echo "set jumper BOOT SEL - 3-4 - off"
 	echo "set jumper GPIO3 1  - 5-6 - on"
 }
 
-jump_boot() {
+jumpers_boot() {
 	echo "set jumper AUTO PWR - 1-2 - on"
 	echo "set jumper BOOT SEL - 3-4 - off"
 	echo "set jumper GPIO3 1  - 5-6 - off"
@@ -36,13 +36,13 @@ usage() {
 	echo "             Program the eMMC system partition (system)." >&2
 	echo "     -t, --fastboot" >&2
 	echo "             Use the fastboot firmware and bootloader." >&2
-	echo "     -u, --uefi" >&2
+	echo "     -u, --uefi (default)" >&2
 	echo "             Use the UEFI firmware and Grub bootloader." >&2
 	
 	exit 1
 }
 
-fw_type="none"
+fw_type="uefi"
 fw="n"
 boot="n"
 system="n"
@@ -80,29 +80,35 @@ if [[ "${fw_type}" == "none" ]] && [[ "${fw}" == "y" || "${boot}" == "y" ]]; the
 	usage
 fi
 
+utils=$(dirname "$0")
 . "$(dirname "${0}")/program-include" || exit 1
 
+echo "Use: wget -e robots=off --recursive --page-requisites --convert-links --no-parent 'https://builds.96boards.org/snapshots/hikey/linaro/uefi/${uefi_build}/'"
+echo "Use: wget -e robots=off --recursive --page-requisites --convert-links --no-parent --reject hikey-jessie_alip-* --reject Image --reject hikey-jessie_developer_${debian_version}.img.gz --reject initrd* 'https://builds.96boards.org/snapshots/hikey/linaro/debian/${debian_build}/'"
+
 if [[ ${fw} == "y" ]]; then
-	jump_flash
-	echo "Writing to firmware: '${fw_type}'"
+	jumpers_flash
+	echo "Writing firmware: '${fw_type}'"
 
 	case ${fw_type} in
 	"fastboot" )
-		sudo python ${utils}/hisi-idt.py -d ${device} --img1 "${firmware_path}/fastboot1.img" --img2 "${firmware_path}/fastboot2.img" || die $LINENO
+		echo "From fastboot_path: '${fastboot_path}'"
+		sudo python ${utils}/hisi-idt.py -d ${device} --img1 "${fastboot_path}/fastboot1.img" --img2 "${fastboot_path}/fastboot2.img" || die $LINENO
 		echo "sleep 10 seconds to allow fastboot stub to start in ram"
 		sleep 10
-		sudo fastboot flash ptable "${firmware_path}/ptable-linux.img" || die $LINENO
-		sudo fastboot flash fastboot1 "${firmware_path}/fastboot1.img" || die $LINENO
-		sudo fastboot flash fastboot "${firmware_path}/fastboot2.img" || die $LINENO
-		sudo fastboot flash nvme ${firmware_path}/nvme.img || die $LINENO
-		sudo fastboot flash mcuimage ${firmware_path}/mcuimage.bin || die $LINENO
+		sudo fastboot flash ptable "${fastboot_path}/ptable-linux.img" || die $LINENO
+		sudo fastboot flash fastboot1 "${fastboot_path}/fastboot1.img" || die $LINENO
+		sudo fastboot flash fastboot "${fastboot_path}/fastboot2.img" || die $LINENO
+		sudo fastboot flash nvme "${fastboot_path}/nvme.img" || die $LINENO
+		sudo fastboot flash mcuimage "${fastboot_path}/mcuimage.bin" || die $LINENO
 		;;
 	"uefi" )
+		echo "From uefi_path: '${uefi_path}'"
 		sudo python ${utils}/hisi-idt.py -d ${device} --img1="${uefi_path}/l-loader.bin" || die $LINENO
 		sleep 2
 		sudo fastboot flash ptable "${uefi_path}/ptable-linux.img" || die $LINENO
 		sudo fastboot flash fastboot "${uefi_path}/fip.bin" || die $LINENO
-		sudo fastboot flash nvme ${firmware_path}/nvme.img || die $LINENO
+		sudo fastboot flash nvme "${uefi_path}/nvme.img" || die $LINENO
 		;;
 	* )
 		;;
@@ -110,11 +116,11 @@ if [[ ${fw} == "y" ]]; then
 fi
 
 if [[ "${boot}" == "y" ]]; then
-	[[ ${fw} == "y" ]] || jump_fastboot
+	[[ ${fw} == "y" ]] || jumpers_fastboot
 
 	case ${fw_type} in
 	"fastboot" )
-		boot_image=${fb_boot_image}
+		boot_image=${fastboot_boot_image}
 		;;
 	"uefi" )
 		boot_image=${uefi_boot_image}
@@ -124,15 +130,15 @@ if [[ "${boot}" == "y" ]]; then
 	esac
 
 	echo "Writing to boot: ${boot_image}"
-	sudo fastboot flash boot ${boot_image} || die $LINENO
+	sudo fastboot flash boot "${boot_image}" || die $LINENO
 fi
 
 if [[ "${system}" == "y" ]]; then
-	[[ ${fw} == "y"  || "${boot}" == "y" ]] || jump_fastboot
+	[[ ${fw} == "y"  || "${boot}" == "y" ]] || jumpers_fastboot
 	echo "Writing to system: ${system_image}"
-	sudo fastboot flash system ${system_image} || die $LINENO
+	sudo fastboot flash system "${system_image}" || die $LINENO
 fi
 
 sudo fastboot reboot
 
-jump_boot
+jumpers_boot

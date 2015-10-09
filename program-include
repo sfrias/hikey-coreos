@@ -1,45 +1,23 @@
 #!/bin/bash
 
+device="/dev/ttyUSB3"
+
 builds_root="/home/geoff/projects/96boards/hikey/builds.96boards.org"
 
-device="/dev/ttyUSB1"
+fastboot_build="15.06"
 
-firmware_version="15.06"
+#uefi_build="46" # output on ttyAMA0
+uefi_build="75" # output on ttyAMA3
 
-uefi_version="46" # OK
-# NG: 47,48,49,50,51,52,54,55 (no AMA0 uart output)
-#uefi_version="64" # no AMA0 uart output
+debian_version="20150929-354"
+debian_build=${debian_version##*-}
 
-#uefi_boot_version="305" # OK
-uefi_boot_version="339"
+uefi_path=${uefi_path:-"${builds_root}/snapshots/hikey/linaro/uefi/${uefi_build}"}
+fastboot_path=${fastboot_path:-"${builds_root}/releases/hikey/linaro/binaries/${fastboot_build}"}
 
-utils=$(dirname "$0")
+_debian_path="${builds_root}/snapshots/hikey/linaro/debian/${debian_build}"
 
-version=${version:-"release"}
+fastboot_boot_image="${_debian_path}/boot-fat.emmc.img"
+uefi_boot_image="${_debian_path}/boot-fat.uefi.img"
 
-case ${version} in
-"release" )
-	linaro_build="15.06"
-	debian_version="20150701-323"
-	;;
-"snapshot" )
-	linaro_build="339"
-	debian_version="20150810-339"
-	;;
-* )
-	die "bad version"
-	;;
-esac
-
-debian_path="${builds_root}/${version}s/hikey/linaro/debian/${linaro_build}"
-uefi_boot_path="${builds_root}/snapshots/hikey/linaro/debian/${uefi_boot_version}"
-
-
-firmware_path=${firmware_path:-"${builds_root}/releases/hikey/linaro/binaries/${firmware_version}"}
-uefi_path=${uefi_path:-"${builds_root}/snapshots/hikey/linaro/uefi/${uefi_version}"}
-
-fb_boot_image=${boot_image:-"${debian_path}/boot-fat.emmc.img"}
-
-uefi_boot_image=${uefi_boot_path}/boot-fat.uefi.img
-
-system_image=${system_image:-"${debian_path}/hikey-jessie_developer_${debian_version}.emmc.img"}
+system_image=${system_image:-"${_debian_path}/hikey-jessie_developer_${debian_version}.emmc.img"}
