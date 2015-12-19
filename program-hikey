@@ -1,8 +1,26 @@
 #! /bin/bash -x
 
+device="/dev/ttyUSB2"
+
+builds_root="/home/${USER}/projects/96boards"
+
+uefi_path="${builds_root}/builds.96boards.org/releases/hikey/linaro/binaries/15.11"
+debian_path="${builds_root}/builds.96boards.org/releases/hikey/linaro/debian/15.11"
+debian_version="20151130-387-4g"
+
+boot_image="${debian_path}/boot-fat.uefi.img"
+system_image="${debian_path}/hikey-jessie_developer_${debian_version}.emmc.img"
+
 die() {
 	echo "(${1}) ERROR: command failed"
 	exit 1
+}
+
+check_device() {
+	if [[ ! -a ${device} ]]; then
+		echo "ERROR: Serial device ${device} not found!"
+		exit 1
+	fi
 }
 
 jumpers_flash() {
@@ -34,22 +52,20 @@ usage() {
 	echo "             Print a help message." >&2
 	echo "     -s, --system" >&2
 	echo "             Program the eMMC system partition (system)." >&2
-	echo "     -t, --fastboot" >&2
-	echo "             Use the fastboot firmware and bootloader." >&2
-	echo "     -u, --uefi (default)" >&2
-	echo "             Use the UEFI firmware and Grub bootloader." >&2
-	
+	echo "HINT" >&2
+	echo "     wget -e robots=off --recursive --page-requisites --convert-links --no-parent \\" >&2
+	echo "     'https://builds.96boards.org/releases/hikey/linaro/binaries/...'" >&2
+
 	exit 1
 }
-
-fw_type="uefi"
-fw="n"
-boot="n"
-system="n"
 
 if [[ $# -eq 0 ]]; then
 	usage
 fi
+
+fw="n"
+boot="n"
+system="n"
 
 while [[ $# -gt 0 ]]; do
 	case "$1" in
@@ -62,12 +78,6 @@ while [[ $# -gt 0 ]]; do
 	-s | --system)
 		system="y"
 		;;
-	-t | --fastboot)
-		fw_type="fastboot"
-		;;
-	-u | --uefi)
-		fw_type="uefi"
-		;;
 	*)
 		usage
 		;;
@@ -75,67 +85,26 @@ while [[ $# -gt 0 ]]; do
 	shift
 done
 
-if [[ "${fw_type}" == "none" ]] && [[ "${fw}" == "y" || "${boot}" == "y" ]]; then
-	echo "ERROR: Need firmware type." >&2
-	usage
-fi
-
-utils=$(dirname "$0")
-. "$(dirname "${0}")/program-include" || exit 1
-
-echo "Use: wget -e robots=off --recursive --page-requisites --convert-links --no-parent 'https://builds.96boards.org/snapshots/hikey/linaro/uefi/${uefi_build}/'"
-echo "Use: wget -e robots=off --recursive --page-requisites --convert-links --no-parent --reject hikey-jessie_alip-* --reject Image --reject hikey-jessie_developer_${debian_version}.img.gz --reject initrd* 'https://builds.96boards.org/snapshots/hikey/linaro/debian/${debian_build}/'"
-
 if [[ ${fw} == "y" ]]; then
 	jumpers_flash
-	echo "Writing firmware: '${fw_type}'"
-
-	case ${fw_type} in
-	"fastboot" )
-		echo "From fastboot_path: '${fastboot_path}'"
-		sudo python ${utils}/hisi-idt.py -d ${device} --img1 "${fastboot_path}/fastboot1.img" --img2 "${fastboot_path}/fastboot2.img" || die $LINENO
-		echo "sleep 10 seconds to allow fastboot stub to start in ram"
-		sleep 10
-		sudo fastboot flash ptable "${fastboot_path}/ptable-linux.img" || die $LINENO
-		sudo fastboot flash fastboot1 "${fastboot_path}/fastboot1.img" || die $LINENO
-		sudo fastboot flash fastboot "${fastboot_path}/fastboot2.img" || die $LINENO
-		sudo fastboot flash nvme "${fastboot_path}/nvme.img" || die $LINENO
-		sudo fastboot flash mcuimage "${fastboot_path}/mcuimage.bin" || die $LINENO
-		;;
-	"uefi" )
-		echo "From uefi_path: '${uefi_path}'"
-		sudo python ${utils}/hisi-idt.py -d ${device} --img1="${uefi_path}/l-loader.bin" || die $LINENO
-		sleep 2
-		sudo fastboot flash ptable "${uefi_path}/ptable-linux.img" || die $LINENO
-		sudo fastboot flash fastboot "${uefi_path}/fip.bin" || die $LINENO
-		sudo fastboot flash nvme "${uefi_path}/nvme.img" || die $LINENO
-		;;
-	* )
-		;;
-	esac
+	echo "Writing firmware from '${uefi_path}'"
+	check_device
+	sudo python ${uefi_path}/hisi-idt.py -d ${device} --img1="${uefi_path}/l-loader.bin" || die $LINENO
+	sleep 2
+	sudo fastboot flash ptable "${uefi_path}/ptable-linux-4g.img" || die $LINENO
+	sudo fastboot flash fastboot "${uefi_path}/fip.bin" || die $LINENO
+	sudo fastboot flash nvme "${uefi_path}/nvme.img" || die $LINENO
 fi
 
 if [[ "${boot}" == "y" ]]; then
 	[[ ${fw} == "y" ]] || jumpers_fastboot
-
-	case ${fw_type} in
-	"fastboot" )
-		boot_image=${fastboot_boot_image}
-		;;
-	"uefi" )
-		boot_image=${uefi_boot_image}
-		;;
-	* )
-		;;
-	esac
-
-	echo "Writing to boot: ${boot_image}"
-	sudo fastboot flash boot "${boot_image}" || die $LINENO
+	echo "Writing boot image '${boot_image}'"
+	sudo fastboot flash boot ${boot_image} || die $LINENO
 fi
 
 if [[ "${system}" == "y" ]]; then
 	[[ ${fw} == "y"  || "${boot}" == "y" ]] || jumpers_fastboot
-	echo "Writing to system: ${system_image}"
+	echo "Writing system image ${system_image}"
 	sudo fastboot flash system "${system_image}" || die $LINENO
 fi
 
