@@ -51,6 +51,8 @@ Or better:
 
 ## Hikey Board
 
+NOTE: The Hikey board is not supported for release arm64_coreos_developer_image_935.0.0+2016-01-27-1049-a1
+
 ### SD Card Setup
 
 Need 2.0 GiB or larger Micro SD card for HiKey.
