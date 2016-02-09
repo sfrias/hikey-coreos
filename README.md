@@ -1,6 +1,6 @@
 # CoreOS ARM64 Notes
 
-2016.01.27
+2016.02.09
 
 ## Info
 
@@ -51,7 +51,10 @@ Or better:
 
 ## Hikey Board
 
-NOTE: The Hikey board is not supported for release arm64_coreos_developer_image_935.0.0+2016-01-27-1049-a1
+NOTE: The Hikey board is not supported for these releases:
+
+    arm64_coreos_developer_image_935.0.0+2016-01-27-1049-a1
+    arm64_coreos_developer_image_949.0.0+2016-02-09-0944-a1
 
 ### SD Card Setup
 
