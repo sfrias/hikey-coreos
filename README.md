@@ -53,8 +53,9 @@ Or better:
 
 NOTE: The Hikey board is not supported for these releases:
 
-    arm64_coreos_developer_image_935.0.0+2016-01-27-1049-a1
-    arm64_coreos_developer_image_949.0.0+2016-02-09-0944-a1
+    935.0.0+2016-01-27-1049-a1
+    949.0.0+2016-02-09-0944-a1
+    962.0.0+2016-02-19-0947-a1
 
 ### SD Card Setup
 
