@@ -1,10 +1,10 @@
 # CoreOS ARM64 Notes
 
-2016.02.09
+2016.02.22
 
 ## Info
 
-The releases here are unofficial ARM64 CoreOS disk images that I've build for testing CoreOS on QEMU and the 96boards HiKey developer board.  For info on the HiKey board see https://www.96boards.org/products/ce/hikey/.
+The releases here are unofficial ARM64 CoreOS disk images that I've build for testing CoreOS on QEMU, the 96boards HiKey developer board, and the Huawei D02 development board.  For info on the HiKey board see https://www.96boards.org/products/ce/hikey/.  For info on the D02 board see http://open-estuary.org/.
 
 You can always find the latest version of this document, and some other useful
 technical documents at https://github.com/glevand/hikey-coreos/
@@ -115,3 +115,6 @@ To inspect the CoreOS disk image use somthing like:
     sudo mount /dev/mapper/loopXp3 /tmp/usr
     sudo mount /dev/mapper/loopXp9 /tmp/rootfs
 
+### Building
+
+See The README at https://github.com/glevand/coreos--manifest for info on building CoreOS with my development repositories.
