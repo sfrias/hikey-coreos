@@ -1,6 +1,6 @@
 # CoreOS ARM64 Notes
 
-2016.02.22
+2016.03.09
 
 ## Info
 
@@ -22,32 +22,31 @@ Free Documentation License".
 
 ## QEMU
 
-The CoreOS SDK includes qemu-system-aarch64.  This should be enough for general development work, and is what I recommend.  Newer distros may have a packaged qemu-system-aarch64 that you can use.
+The CoreOS SDK includes qemu-system-aarch64.  This should be enough for general development work, and is what I recommend.  Newer host distros may have a packaged qemu-system-aarch64 that you can use.
 
 To run CoreOS with QEMU you'll need UEFI firmware built for qemu-system-aarch64.  I use the binary releases provided by Linaro:
 
     wget http://releases.linaro.org/components/kernel/uefi-linaro/latest/release/qemu64/QEMU_EFI.fd
 
-I run QEMU as shown below.  This should work with either a pre-built arm64 coreos_developer_image or one build with the CoreOS SDK using 'build_image board=arm64-usr dev':
+To run single node tests I run QEMU as shown below.  This should work with either a pre-built ARM64 CoreOS image or the coreos_developer_image.bin build with the CoreOS SDK using ```build_image board=arm64-usr dev```:
 
     qemu-system-aarch64 -machine virt -cpu cortex-a57 -machine type=virt -nographic -m 2048 \
       -bios QEMU_EFI.fd \
       -drive if=none,id=blk,file=arm64_coreos_developer_image_${version}.bin \
       -device virtio-blk-device,drive=blk \
-      -net user,hostfwd=tcp::10022-:22 \
-      -device virtio-net-device,vlan=0 \
-      -fsdev local,id=host_dev,path=${path_to}/coreos-sdk,security_model=none \
-      -device virtio-9p-device,fsdev=host_dev,mount_tag=host_dev
+      -net user,hostfwd=tcp::10022-:22,hostname=core-arm64 \
+      -device virtio-net-device,vlan=0
 
-The -fsdev option will mount a host directory tree in the QEMU ARM64 guest, which allows you to work with files from both the host and target.
+Port 22 of the ARM64 VM will be forwarded to port 10022 on the host: ```ssh -p 10022 core@localhost```.
 
-In the QEMU guest use something like this to mount the host directory:
+To run the node in a cluster use QEMU's bridged networking:
 
-    mount -t 9p -o trans=virtio host_dev ${path_to}/coreos-sdk
-
-Or better:
-
-    echo "host_dev ${path_to}/coreos-sdk 9p trans=virtio 0 0" >> /etc/fstab
+    qemu-system-aarch64 -machine virt -cpu cortex-a57 -machine type=virt -nographic -m 2048 \
+      -bios QEMU_EFI.fd \
+      -drive if=none,id=blk,file=arm64_coreos_developer_image_${version}.bin \
+      -device virtio-blk-device,drive=blk \
+      -netdev bridge,br=br0,id=net0 \
+      -device virtio-net-device,netdev=net0,id=nic0
 
 ## Hikey Board
 
@@ -99,6 +98,10 @@ You can edit the eMMC grub config from CoreOS with something like:
 ### Start Up
 
 Insert SD card into HiKey, power on, choose 'CoreOS: SD Card' menu item.
+
+## Huawei D02 Developer Board
+
+TBD
 
 ## General Notes
 
