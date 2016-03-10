@@ -4,7 +4,11 @@
 
 ## Info
 
-The releases here are unofficial ARM64 CoreOS disk images that I've build for testing CoreOS on QEMU, the 96boards HiKey developer board, and the Huawei D02 development board.  For info on the HiKey board see https://www.96boards.org/products/ce/hikey/.  For info on the D02 board see http://open-estuary.org/.
+The releases here are unofficial ARM64 CoreOS disk images that I've build for
+testing CoreOS on QEMU, the 96boards HiKey developer board, and the Huawei D02
+development board.  For info on the HiKey board see 
+https://www.96boards.org/products/ce/hikey/.  For info on the D02 board see
+http://open-estuary.org/.
 
 You can always find the latest version of this document, and some other useful
 technical documents at https://github.com/glevand/hikey-coreos/
@@ -15,20 +19,26 @@ freenode/#coreos as geoff-
 ## License
 
 Permission is granted to copy, distribute and/or modify this document under the
-terms of the GNU Free Documentation License, Version 1.3 published by the Free
-Software Foundation; with no Invariant Sections, no Front-Cover Texts, and no
-Back-Cover Texts. A copy of the license is included in the section entitled "GNU
-Free Documentation License".
+terms of the
+[GNU Free Documentation License, Version 1.3](http://www.gnu.org/licenses/fdl-1.3.html)
+published by the Free Software Foundation; with no Invariant Sections, no
+Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included in
+the section entitled "GNU Free Documentation License".
 
 ## QEMU
 
-The CoreOS SDK includes qemu-system-aarch64.  This should be enough for general development work, and is what I recommend.  Newer host distros may have a packaged qemu-system-aarch64 that you can use.
+The CoreOS SDK includes qemu-system-aarch64.  This should be enough for general
+development work, and is what I recommend.  Newer host distros may have a
+packaged qemu-system-aarch64 that you can use.
 
-To run CoreOS with QEMU you'll need UEFI firmware built for qemu-system-aarch64.  I use the binary releases provided by Linaro:
+To run CoreOS with QEMU you'll need UEFI firmware built for qemu-system-aarch64.
+I use the binary releases provided by Linaro:
 
     wget http://releases.linaro.org/components/kernel/uefi-linaro/latest/release/qemu64/QEMU_EFI.fd
 
-To run single node tests I run QEMU as shown below.  This should work with either a pre-built ARM64 CoreOS image or the coreos_developer_image.bin build with the CoreOS SDK using ```build_image board=arm64-usr dev```:
+To run single node tests I run QEMU as shown below.  This should work with
+either a pre-built ARM64 CoreOS image or the coreos_developer_image.bin build
+with the CoreOS SDK using ```build_image board=arm64-usr dev```:
 
     qemu-system-aarch64 -machine virt -cpu cortex-a57 -machine type=virt -nographic -m 2048 \
       -bios QEMU_EFI.fd \
@@ -37,7 +47,8 @@ To run single node tests I run QEMU as shown below.  This should work with eithe
       -net user,hostfwd=tcp::10022-:22,hostname=core-arm64 \
       -device virtio-net-device,vlan=0
 
-Port 22 of the ARM64 VM will be forwarded to port 10022 on the host: ```ssh -p 10022 core@localhost```.
+Port 22 of the ARM64 VM will be forwarded to port 10022 on the host:
+```ssh -p 10022 core@localhost```.
 
 To run the node in a cluster use QEMU's bridged networking:
 
@@ -65,19 +76,25 @@ Need 2.0 GiB or larger Micro SD card for HiKey.
 
 ### eMMC Setup
 
-If not installed, install UEFI firmware, Grub bootloader, and a Debian system image to the HiKey eMMC.  The Debian install on eMMC will be for setup and recovery.  See https://github.com/96boards/documentation/wiki/HiKeyUEFI and https://github.com/96boards/documentation/wiki/LatestSnapshots.
+If not installed, install UEFI firmware, Grub bootloader, and a Debian system
+image to the HiKey eMMC.  The Debian install on eMMC will be for setup and
+recovery.  See https://github.com/96boards/documentation/wiki/HiKeyUEFI and
+https://github.com/96boards/documentation/wiki/LatestSnapshots.
 
 Download the needed files from:
 
     http://builds.96boards.org
 
-You can try my program-hikey utility included in this release if you like.  You'll need to set the builds_root variable.  This command should install everything needed to boot to Debian from the eMMC:
+You can try my program-hikey utility included in this release if you like.
+You'll need to set the builds_root variable.  This command should install
+everything needed to boot to Debian from the eMMC:
 
     program-hikey --firmware --boot --system
 
 ### Grub menu
 
-Boot the Hikey without an SD card installed or choose the grub 'eMMC' boot option.  Add a CoreOS menu item like the following to the eMMC grub config file:
+Boot the Hikey without an SD card installed or choose the grub 'eMMC' boot
+option.  Add a CoreOS menu item like the following to the eMMC grub config file:
 
     debian # vi /boot/grub/grub.cfg
 
@@ -87,7 +104,8 @@ Boot the Hikey without an SD card installed or choose the grub 'eMMC' boot optio
     devicetree /coreos/hi6220-hikey.dtb
     }
 
-I recommend you increase the grub.cfg 'timeout' value, and maybe set the 'default' to your 'CoreOS: SD Card' entry.
+I recommend you increase the grub.cfg 'timeout' value, and maybe set the
+'default' to your 'CoreOS: SD Card' entry.
 
 You can edit the eMMC grub config from CoreOS with something like:
 
@@ -120,4 +138,5 @@ To inspect the CoreOS disk image use somthing like:
 
 ### Building
 
-See The README at https://github.com/glevand/coreos--manifest for info on building CoreOS with my development repositories.
+See The README at https://github.com/glevand/coreos--manifest for info on
+building CoreOS with my development repositories.
