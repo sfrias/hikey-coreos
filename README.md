@@ -86,9 +86,10 @@ Download the needed files from:
     http://builds.96boards.org
 
 You can try my program-hikey utility included in this release if you like.
-You'll need to set the builds_root variable.  This command should install
-everything needed to boot to Debian from the eMMC:
+You may need to set the ```builds_root``` and ```DEVICE``` variables.  These
+commands should install everything needed to boot to Debian from the eMMC:
 
+    program-hikey --download
     program-hikey --firmware --boot --system
 
 ### Grub menu

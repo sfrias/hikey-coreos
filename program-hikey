@@ -1,15 +1,20 @@
 #! /bin/bash
 
-device="/dev/ttyUSB2"
+DEVICE="/dev/ttyUSB2"
 
-builds_root="/home/${USER}/projects/96boards"
+url_root="https://"
+dl_root="/home/${USER}/projects/96boards"
 
-uefi_path="${builds_root}/builds.96boards.org/releases/hikey/linaro/binaries/15.11"
-debian_path="${builds_root}/builds.96boards.org/releases/hikey/linaro/debian/15.11"
-debian_version="20151130-387-4g"
+tool="builds.96boards.org/releases/hikey/linaro/binaries/15.11/hisi-idt.py"
+loader="builds.96boards.org/releases/hikey/linaro/binaries/15.11/l-loader.bin"
+ptable_4gb="builds.96boards.org/releases/hikey/linaro/binaries/15.11/ptable-linux-4g.img"
+ptable_8gb="builds.96boards.org/releases/hikey/linaro/binaries/15.11/ptable-linux-8g.img"
+fip="builds.96boards.org/releases/hikey/linaro/binaries/15.11/fip.bin"
+nvme="builds.96boards.org/releases/hikey/linaro/binaries/15.11/nvme.img"
 
-boot_image="${debian_path}/boot-fat.uefi.img"
-system_image="${debian_path}/hikey-jessie_developer_${debian_version}.emmc.img"
+boot_img="builds.96boards.org/releases/hikey/linaro/debian/15.11/boot-fat.uefi.img"
+system_img_4g="builds.96boards.org/releases/hikey/linaro/debian/15.11/hikey-jessie_developer_20151130-387-4g.emmc.img"
+system_img_8g="builds.96boards.org/releases/hikey/linaro/debian/15.11/hikey-jessie_developer_20151130-387-8g.emmc.img"
 
 die() {
 	echo "(${1}) ERROR: command failed"
@@ -17,8 +22,8 @@ die() {
 }
 
 check_device() {
-	if [[ ! -a ${device} ]]; then
-		echo "ERROR: Serial device ${device} not found!"
+	if [[ ! -a ${DEVICE} ]]; then
+		echo "ERROR: Serial device ${DEVICE} not found!"
 		exit 1
 	fi
 }
@@ -46,12 +51,16 @@ usage() {
 	echo "OPTIONS" >&2
 	echo "     -b, --boot" >&2
 	echo "             Program the eMMC boot partition (boot)." >&2
+	echo "     -d, -download" >&2
+	echo "             Download files from Internet." >&2
 	echo "     -f, --firmware" >&2
 	echo "             Program the eMMC firmware partitions (ptable, fastboot, nvme, mcuimage)." >&2
 	echo "     -h, --help" >&2
 	echo "             Print a help message." >&2
 	echo "     -s, --system" >&2
 	echo "             Program the eMMC system partition (system)." >&2
+	echo "     -8, --8gb" >&2
+	echo "             Program for 8GiB system (default = ${size})." >&2
 	echo "HINT" >&2
 	echo "     wget -e robots=off --recursive --page-requisites --convert-links --no-parent \\" >&2
 	echo "     'https://builds.96boards.org/releases/hikey/linaro/binaries/...'" >&2
@@ -59,24 +68,32 @@ usage() {
 	exit 1
 }
 
+boot="n"
+download="n"
+fw="n"
+system="n"
+size="4g"
+
 if [[ $# -eq 0 ]]; then
 	usage
 fi
-
-fw="n"
-boot="n"
-system="n"
 
 while [[ $# -gt 0 ]]; do
 	case "$1" in
 	-b | --boot)
 		boot="y"
 		;;
+	-d | --download)
+		download="y"
+		;;
 	-f | --firmware)
 		fw="y"
 		;;
 	-s | --system)
 		system="y"
+		;;
+	-8 | --8gb)
+		size="8g"
 		;;
 	*)
 		usage
@@ -85,27 +102,57 @@ while [[ $# -gt 0 ]]; do
 	shift
 done
 
+if [[ "${size}" == "4g" ]]; then
+	ptable=${ptable_4gb}
+	system_img=${system_img_4g}
+elif [[ "${size}" == "8g" ]]; then
+	ptable=${ptable_8gb}
+	system_img=${system_img_8g}
+else
+	die $LINENO
+fi
+
+if [[ ${download} == "y" ]]; then
+	for item in ${tool} ${loader} ${ptable} ${fip} ${nvme} "${boot_img}.gz" "${system_img}.gz"; do
+		echo "Download ${url_root}${item}: "
+		mkdir -p $(dirname "${dl_root}/${item}") || die $LINENO
+		curl --progress-bar ${url_root}${item} -o ${dl_root}/${item} || die $LINENO
+	done
+
+	for item in "${boot_img}" "${system_img}"; do
+		echo "Extracting ${dl_root}/${item}"
+		gunzip --keep --force "${dl_root}/${boot_img}.gz"
+	done
+
+	for item in ${tool} ${loader} ${ptable} ${fip} ${nvme} "${boot_img}.gz" "${system_img}.gz"; do
+		md5sum ${dl_root}/${item} || die $LINENO
+	done
+
+	echo "Download complete, ready to program."
+	exit
+fi
+
 if [[ ${fw} == "y" ]]; then
 	jumpers_flash
-	echo "Writing firmware from '${uefi_path}'"
+	echo "Writing firmware"
 	check_device
-	sudo python ${uefi_path}/hisi-idt.py -d ${device} --img1="${uefi_path}/l-loader.bin" || die $LINENO
+	sudo python "${dl_root}/${tool}" -d ${DEVICE} --img1="${dl_root}/${loader}" || die $LINENO
 	sleep 2
-	sudo fastboot flash ptable "${uefi_path}/ptable-linux-4g.img" || die $LINENO
-	sudo fastboot flash fastboot "${uefi_path}/fip.bin" || die $LINENO
-	sudo fastboot flash nvme "${uefi_path}/nvme.img" || die $LINENO
+	sudo fastboot flash ptable "${dl_root}/${ptable}" || die $LINENO
+	sudo fastboot flash fastboot "${dl_root}/${fip}" || die $LINENO
+	sudo fastboot flash nvme "${dl_root}/${nvme}" || die $LINENO
 fi
 
 if [[ "${boot}" == "y" ]]; then
 	[[ ${fw} == "y" ]] || jumpers_fastboot
-	echo "Writing boot image '${boot_image}'"
-	sudo fastboot flash boot ${boot_image} || die $LINENO
+	echo "Writing boot image"
+	sudo fastboot flash boot "${dl_root}/${boot_img}" || die $LINENO
 fi
 
 if [[ "${system}" == "y" ]]; then
 	[[ ${fw} == "y"  || "${boot}" == "y" ]] || jumpers_fastboot
-	echo "Writing system image ${system_image}"
-	sudo fastboot flash system "${system_image}" || die $LINENO
+	echo "Writing system image"
+	sudo fastboot flash system "${dl_root}/${system_img}" || die $LINENO
 fi
 
 sudo fastboot reboot
