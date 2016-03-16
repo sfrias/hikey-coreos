@@ -1,6 +1,6 @@
 # CoreOS ARM64 Notes
 
-2016.03.09
+2016.03.16
 
 ## Info
 
@@ -27,9 +27,9 @@ the section entitled "GNU Free Documentation License".
 
 ## QEMU
 
-The CoreOS SDK includes qemu-system-aarch64.  This should be enough for general
-development work, and is what I recommend.  Newer host distros may have a
-packaged qemu-system-aarch64 that you can use.
+The CoreOS SDK includes qemu-system-aarch64 that you can use.  Newer host
+distros should have a packaged qemu-system-aarch64.  Debian or
+Ubuntu users can install it with ```apt-get install qemu-system-arm```.
 
 To run CoreOS with QEMU you'll need UEFI firmware built for qemu-system-aarch64.
 I use the binary releases provided by Linaro:
@@ -47,10 +47,10 @@ with the CoreOS SDK using ```build_image board=arm64-usr dev```:
       -net user,hostfwd=tcp::10022-:22,hostname=core-arm64 \
       -device virtio-net-device,vlan=0
 
-Port 22 of the ARM64 VM will be forwarded to port 10022 on the host:
+SSH port 22 of the ARM64 VM will be forwarded to port 10022 on the host:
 ```ssh -p 10022 core@localhost```.
 
-To run the node in a cluster use QEMU's bridged networking:
+To run the ARM64 VM as a node in a cluster use QEMU's bridged networking:
 
     qemu-system-aarch64 -machine virt -cpu cortex-a57 -machine type=virt -nographic -m 2048 \
       -bios QEMU_EFI.fd \
@@ -58,6 +58,9 @@ To run the node in a cluster use QEMU's bridged networking:
       -device virtio-blk-device,drive=blk \
       -netdev bridge,br=br0,id=net0 \
       -device virtio-net-device,netdev=net0,id=nic0
+
+See the [QEMU docs](http://wiki.qemu.org/Manual) on how to setup the networking
+to hook into your system.
 
 ## Hikey Board
 
@@ -69,7 +72,7 @@ NOTE: The Hikey board is not supported for these releases:
 
 ### SD Card Setup
 
-Need 2.0 GiB or larger Micro SD card for HiKey.
+You'll need a 5.0 GiB or larger Micro SD card for the HiKey.
 
     cat arm64_coreos_developer_image_${version}.bin.xz | xz -d > arm64_coreos_developer_image_${version}.bin
     dd if=arm64_coreos_developer_image_${version}.bin of=/dev/sdX bs=4M oflag=sync
@@ -120,7 +123,7 @@ Insert SD card into HiKey, power on, choose 'CoreOS: SD Card' menu item.
 
 ## Huawei D02 Developer Board
 
-TBD
+Comming...
 
 ## General Notes
 
