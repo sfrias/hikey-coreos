@@ -49,6 +49,8 @@ jumpers_boot() {
 usage() {
 	echo "program-hikey" >&2
 	echo "OPTIONS" >&2
+	echo "     -a (y|n), --autoboot=(y|n)" >&2
+	echo "             Set UEFI autoboot on." >&2
 	echo "     -b, --boot" >&2
 	echo "             Program the eMMC boot partition (boot)." >&2
 	echo "     -d, -download" >&2
@@ -68,6 +70,7 @@ usage() {
 	exit 1
 }
 
+autoboot=""
 boot="n"
 download="n"
 fw="n"
@@ -80,6 +83,27 @@ fi
 
 while [[ $# -gt 0 ]]; do
 	case "$1" in
+	-a)
+		shift
+		case "$1" in
+		y)
+			autoboot="y"
+			;;
+		n)
+			autoboot="n"
+			;;
+		*)
+			echo "Bad autoboot: $1" >&2
+			usage
+			;;
+		esac
+		;;
+	--autoboot=y)
+		autoboot="y"
+		;;
+	--autoboot=n)
+		autoboot="n"
+		;;
 	-b | --boot)
 		boot="y"
 		;;
@@ -112,7 +136,7 @@ else
 	die $LINENO
 fi
 
-if [[ ${download} == "y" ]]; then
+if [[ "${download}" == "y" ]]; then
 	for item in ${tool} ${loader} ${ptable} ${fip} ${nvme} "${boot_img}.gz" "${system_img}.gz"; do
 		echo "Download ${url_root}${item}: "
 		mkdir -p $(dirname "${dl_root}/${item}") || die $LINENO
@@ -132,7 +156,7 @@ if [[ ${download} == "y" ]]; then
 	exit
 fi
 
-if [[ ${fw} == "y" ]]; then
+if [[ "${fw}" == "y" ]]; then
 	jumpers_flash
 	echo "Writing firmware"
 	check_device
@@ -144,15 +168,27 @@ if [[ ${fw} == "y" ]]; then
 fi
 
 if [[ "${boot}" == "y" ]]; then
-	[[ ${fw} == "y" ]] || jumpers_fastboot
+	[[ "${fw}" == "y" ]] || jumpers_fastboot
 	echo "Writing boot image"
 	sudo fastboot flash boot "${dl_root}/${boot_img}" || die $LINENO
 fi
 
 if [[ "${system}" == "y" ]]; then
-	[[ ${fw} == "y"  || "${boot}" == "y" ]] || jumpers_fastboot
+	[[ "${fw}" == "y"  || "${boot}" == "y" ]] || jumpers_fastboot
 	echo "Writing system image"
 	sudo fastboot flash system "${dl_root}/${system_img}" || die $LINENO
+fi
+
+if [[ "${autoboot}" == "y" ]]; then
+	[[ "${fw}" == "y"  || "${boot}" == "y" || "${system}" == "y" ]] || jumpers_fastboot
+	echo "Setting autoboot: on"
+	sudo fastboot oem autoboot 1 || die $LINENO
+fi
+
+if [[ "${autoboot}" == "n" ]]; then
+	[[ "${fw}" == "y"  || "${boot}" == "y" || "${system}" == "y" ]] || jumpers_fastboot
+	echo "Setting autoboot: off"
+	sudo fastboot oem autoboot 0 || die $LINENO
 fi
 
 sudo fastboot reboot
