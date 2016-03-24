@@ -1,6 +1,6 @@
 # CoreOS ARM64 Notes
 
-2016.03.16
+2016.03.24
 
 ## Info
 
@@ -64,15 +64,12 @@ to hook into your system.
 
 ## Hikey Board
 
-NOTE: The Hikey board is not supported for these releases:
-
-    935.0.0+2016-01-27-1049-a1
-    949.0.0+2016-02-09-0944-a1
-    962.0.0+2016-02-19-0947-a1
+The Hikey board is supported in ```hikey-coreos-8``` (991.0.0+2016-03-23-0904)
+and later releses.
 
 ### SD Card Setup
 
-You'll need a 5.0 GiB or larger Micro SD card for the HiKey.
+You'll need a 6.0 GiB or larger Micro SD card for the HiKey.
 
     cat arm64_coreos_developer_image_${version}.bin.xz | xz -d > arm64_coreos_developer_image_${version}.bin
     dd if=arm64_coreos_developer_image_${version}.bin of=/dev/sdX bs=4M oflag=sync
@@ -88,42 +85,52 @@ Download the needed files from:
 
     http://builds.96boards.org
 
+The UEFI and Debian consoles will be on the expansion header UART (ttyAMA3) at
+115200 baud.
+
 You can try my program-hikey utility included in this release if you like.
 You may need to set the ```builds_root``` and ```DEVICE``` variables.  These
 commands should install everything needed to boot to Debian from the eMMC:
 
     program-hikey --download
-    program-hikey --firmware --boot --system
+    program-hikey --firmware --boot --system --autoboot=n
 
-### Grub menu
+### UEFI Boot Entry
 
-Boot the Hikey without an SD card installed or choose the grub 'eMMC' boot
-option.  Add a CoreOS menu item like the following to the eMMC grub config file:
+To permanently add a UEFI boot menu entry you will need to turn off the Hikey's
+autoboot feature.  This can be done with the ```--autoboot=n``` option of my
+program-hikey utility, or with a ```fastboot oem autoboot 0``` command.  Note
+that if autoboot is not turned off you can still add a temporary entry that will
+boot CoreOS, but that entry will be gone on re-boot.  See
+[Hikey UEFI wiki](https://github.com/96boards/documentation/wiki/HiKeyUEFI)
+for more info.
 
-    debian # vi /boot/grub/grub.cfg
+To add the boot entry, boot the Hikey with the CoreOS boot SD card installed.
+Stop the default boot selection timer with a keystroke and select the menu
+options ```Boot Manager/Add Boot Device Entry/EFI-SYSTEM```
 
-    menuentry 'CoreOS: SD Card' {
-    set root='hd1,1'
-    linux /coreos/vmlinuz-a console=tty0 console=ttyAMA3,115200 earlycon=pl011,0xf7113000 root=/dev/mmcblk1p9 rootwait ro efi=noruntime
-    devicetree /coreos/hi6220-hikey.dtb
-    }
+Set ```File path of the EFI Application: efi\boot\bootaa64.efi```.  Note that
+backslash ```\``` must be used here.
 
-I recommend you increase the grub.cfg 'timeout' value, and maybe set the
-'default' to your 'CoreOS: SD Card' entry.
+Set ```EFI Application? y```.
 
-You can edit the eMMC grub config from CoreOS with something like:
+Set ```OS loader? y```.
 
-    coreos # mkdir /tmp/grub
-    coreos # mount /dev/mmcblk0p6 /tmp/grub/
-    coreos # vi /tmp/grub/grub/grub.cfg
+Set ```Arguments:``` (empty).
+
+Set ```Description: CoreOS: SD Card```, or whatever you like.
 
 ### Start Up
 
-Insert SD card into HiKey, power on, choose 'CoreOS: SD Card' menu item.
+Navigate back to the main UEFI boot menu and choose the new
+```CoreOS: SD Card``` menu item.  After some loading and a few 'getenv' error
+messages the CoreOS grub menu should appear.  Choose ```96boards hikey```.
+After some delay at a blank screen while loading the system should come up with
+a CoreOS system console on the expansion header UART at ttyAMA3,115200.
 
 ## Huawei D02 Developer Board
 
-Comming...
+Coming...
 
 ## General Notes
 
