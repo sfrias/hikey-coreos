@@ -1,14 +1,11 @@
 # CoreOS ARM64 Notes
 
-2016.03.24
+2016.04.04
 
 ## Info
 
 The releases here are unofficial ARM64 CoreOS disk images that I've build for
-testing CoreOS on QEMU, the 96boards HiKey developer board, and the Huawei D02
-development board.  For info on the HiKey board see 
-https://www.96boards.org/products/ce/hikey/.  For info on the D02 board see
-http://open-estuary.org/.
+testing CoreOS on various ARM64 platforms.
 
 You can always find the latest version of this document, and some other useful
 technical documents at https://github.com/glevand/hikey-coreos/
@@ -64,8 +61,8 @@ to hook into your system.
 
 ## Hikey Board
 
-The Hikey board is supported in ```hikey-coreos-8``` (991.0.0+2016-03-23-0904)
-and later releses.
+The Hikey board is supported in ```hikey-coreos-8``` and later releses.  For
+info on the HiKey board see https://www.96boards.org/products/ce/hikey/.
 
 ### SD Card Setup
 
@@ -84,6 +81,10 @@ https://github.com/96boards/documentation/wiki/LatestSnapshots.
 Download the needed files from:
 
     http://builds.96boards.org
+
+To program the Hikey firmware you will need the Android fastboot program
+installed on your host.  Debian or Ubuntu users can install with
+```apt-get install android-tools-fastboot```.
 
 The UEFI and Debian consoles will be on the expansion header UART (ttyAMA3) at
 115200 baud.
@@ -118,17 +119,63 @@ Set ```OS loader? y```.
 
 Set ```Arguments:``` (empty).
 
-Set ```Description: CoreOS: SD Card```, or whatever you like.
+Set ```Description: CoreOS```, or whatever you like.
 
 ### Start Up
 
-Navigate back to the main UEFI boot menu and choose the new
-```CoreOS: SD Card``` menu item.  After some loading and a few 'getenv' error
-messages the CoreOS grub menu should appear.  Choose ```96boards hikey```.
-After some delay at a blank screen while loading the system should come up with
-a CoreOS system console on the expansion header UART at ttyAMA3,115200.
+Navigate back to the main UEFI boot menu and choose the new ```CoreOS``` menu
+item.  After some loading and a few 'getenv' error messages the CoreOS grub menu
+should appear.  Choose ```96boards hikey```. After some delay at a blank screen
+while loading the system should come up with a CoreOS system console on the
+expansion header UART at ttyAMA3,115200.
+
+## APM X-Gene Mustang
+
+The APM Mustang is supported in ```hikey-coreos-9``` and later releses.
+
+### Storage Setup
+
+Write the CoreOS disk image to either the Mustang hard disk using a USB to SATA
+adapter on your host, or to a USB storage device.  Booting CoreOS from the
+Mustang SD Card currently does not work:
+
+    cat arm64_coreos_developer_image_${version}.bin.xz | xz -d > arm64_coreos_developer_image_${version}.bin
+    dd if=arm64_coreos_developer_image_${version}.bin of=/dev/sdX
+
+### UEFI Setup
+
+Install UEFI firmware version 1.15.10 available from https://myapm.apm.com.
+Newer firmware versions could also work.  For more info on installation see the
+Mustang software guide that comes with the firmware update.  Older firmware
+released by the Fedora project will not work with these CoreOS images.
+
+    UpgradeFirmware.efi apm_upgrade_tianocore.cmd
+
+Reboot into UEFI and select select the menu options
+```Boot Manager/Add Boot Device Entry/EFI-SYSTEM```
+
+Set ```File path of the EFI Application: efi\boot\bootaa64.efi```.  Note that
+backslash ```\``` must be used here.
+
+Set ```EFI Application? y```.
+
+Set ```OS loader? y```.
+
+Set ```Arguments:``` (empty).
+
+Set ```Description: CoreOS```, or whatever you like.
+
+### Start Up
+
+Navigate back to the main UEFI boot menu and choose the new ```CoreOS``` menu
+item.  After some loading and a few 'getenv' error messages the CoreOS grub menu
+should appear.  Choose ```APM Mustang```.  After some delay at a blank screen
+while loading the system should come up with a CoreOS system console on the
+Mustang UART at ttyS0,115200n8.
 
 ## Huawei D02 Developer Board
+
+For info on the D02 board see http://open-estuary.org/.
 
 Coming...
 
