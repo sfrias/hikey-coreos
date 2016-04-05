@@ -1,6 +1,6 @@
 # CoreOS ARM64 Notes
 
-2016.04.04
+2016.04.05
 
 ## Info
 
@@ -75,8 +75,9 @@ You'll need a 6.0 GiB or larger Micro SD card for the HiKey.
 
 If not installed, install UEFI firmware, Grub bootloader, and a Debian system
 image to the HiKey eMMC.  The Debian install on eMMC will be for setup and
-recovery.  See https://github.com/96boards/documentation/wiki/HiKeyUEFI and
-https://github.com/96boards/documentation/wiki/LatestSnapshots.
+recovery.  See
+[Hikey UEFI wiki](https://github.com/96boards/documentation/wiki/HiKeyUEFI) and
+[96boards Snapshots](https://github.com/96boards/documentation/wiki/LatestSnapshots).
 
 Download the needed files from:
 
@@ -86,6 +87,8 @@ To program the Hikey firmware you will need the Android fastboot program
 installed on your host.  Debian or Ubuntu users can install with
 ```apt-get install android-tools-fastboot```.
 
+Connect a Micro-USB 'SYNC' cable to the Hikey's USB OTG.
+
 The UEFI and Debian consoles will be on the expansion header UART (ttyAMA3) at
 115200 baud.
 
@@ -94,7 +97,8 @@ You may need to set the ```builds_root``` and ```DEVICE``` variables.  These
 commands should install everything needed to boot to Debian from the eMMC:
 
     program-hikey --download
-    program-hikey --firmware --boot --system --autoboot=n
+    program-hikey --firmware --boot --system
+    program-hikey --autoboot=n
 
 ### UEFI Boot Entry
 
