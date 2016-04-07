@@ -1,6 +1,6 @@
 # CoreOS ARM64 Notes
 
-2016.04.05
+2016.04.07
 
 ## Contents
 
@@ -11,10 +11,11 @@
 [APM X-Gene Mustang](#apm-x-gene-mustang)<br>
 [Huawei D02 Developer Board](#huawei-d02-developer-board)<br>
 [General Notes](#general-notes)<br>
+[Add A UEFI Boot Option](#add-a-uefi-boot-option)<br>
 
 ## Info
 
-The releases here are unofficial ARM64 CoreOS disk images that I've build for
+The releases here are unofficial CoreOS ARM64 disk images that I've build for
 testing CoreOS on various ARM64 platforms.
 
 You can always find the latest version of this document, and some other useful
@@ -120,20 +121,8 @@ boot CoreOS, but that entry will be gone on re-boot.  See
 [Hikey UEFI wiki](https://github.com/96boards/documentation/wiki/HiKeyUEFI)
 for more info.
 
-To add the boot entry, boot the Hikey with the CoreOS boot SD card installed.
-Stop the default boot selection timer with a keystroke and select the menu
-options ```Boot Manager/Add Boot Device Entry/EFI-SYSTEM```
-
-Set ```File path of the EFI Application: efi\boot\bootaa64.efi```.  Note that
-backslash ```\``` must be used here.
-
-Set ```EFI Application? y```.
-
-Set ```OS loader? y```.
-
-Set ```Arguments:``` (empty).
-
-Set ```Description: CoreOS```, or whatever you like.
+To add a boot menu entry, boot with the CoreOS storage device installed then
+follow [Add A UEFI Boot Option](#add-a-uefi-boot-option).
 
 ### Start Up
 
@@ -149,7 +138,7 @@ The APM Mustang is supported in ```hikey-coreos-9``` and later releses.
 
 ### Storage Setup
 
-Write the CoreOS disk image to either the Mustang hard disk using a USB to SATA
+Write the CoreOS ARM64 disk image to either the Mustang hard disk using a USB to SATA
 adapter on your host, or to a USB storage device.  Booting CoreOS from the
 Mustang SD Card currently does not work:
 
@@ -165,7 +154,60 @@ released by the Fedora project will not work with these CoreOS images.
 
     UpgradeFirmware.efi apm_upgrade_tianocore.cmd
 
-Reboot into UEFI and select select the menu options
+To add a boot menu entry, boot with the CoreOS storage device installed then
+follow [Add A UEFI Boot Option](#add-a-uefi-boot-option).
+
+### Start Up
+
+Navigate back to the main UEFI boot menu and choose the new ```CoreOS``` menu
+item.  After some loading and a few 'getenv' error messages the CoreOS grub menu
+should appear.  Choose ```APM Mustang```.  After some delay at a blank screen
+while loading the system should come up with a CoreOS system console on the
+UART at ttyS0,115200n8.
+
+## Huawei D02 Developer Board
+
+The D02 Developer board is supported in ```hikey-coreos-10``` and later releses.
+For info on the D02 board see http://open-estuary.org/.
+
+Update the D02 system flash to the latest estuary release with commands similar
+to these:
+
+    ifconfig -s eth0 192.168.10.XXX 255.255.255.0 192.168.10.YYY
+    provision 192.168.10.YYY -u anonymous -p guest -f latest/UEFI_D02.fd -a 100000
+    spiwfmem 100000 0000000 300000
+    provision 192.168.10.YYY -u anonymous -p guest -f latest/CH02TEVBC_V03.bin -a 100000
+    updatecpld 100000
+    provision 192.168.10.YYY -u anonymous -p guest -f latest/hip05-d02.dtb -a 100000
+    spiwfmem 100000 300000 100000
+
+Write the CoreOS ARM64 disk image to a 8 GiB or larger USB storage device, or a
+Seagate ST1000LM024 hard disk using a USB to SATA adapter on your host:
+
+    cat arm64_coreos_developer_image_${version}.bin.xz | xz -d > arm64_coreos_developer_image_${version}.bin
+    dd if=arm64_coreos_developer_image_${version}.bin of=/dev/sdX
+
+To add a boot menu entry, boot with the CoreOS storage device installed then
+follow [Add A UEFI Boot Option](#add-a-uefi-boot-option).
+
+### Start Up
+
+Navigate back to the main UEFI boot menu and choose the new ```CoreOS``` menu
+item.  After some loading and a few 'getenv' error messages the CoreOS grub menu
+should appear.  Choose ```Huawei D02```.  After some delay at a blank screen
+while loading the system should come up with a CoreOS system console on the
+UART at ttyS0,115200n8.
+
+## General Notes
+
+### CoreOS Login
+
+  user='core', password='c'
+
+### Add A UEFI Boot Option
+
+Reboot into UEFI with the CoreOS storage device installed and stop the default
+boot selection timer with a keystroke.  Select the menu options
 ```Boot Manager/Add Boot Device Entry/EFI-SYSTEM```
 
 Set ```File path of the EFI Application: efi\boot\bootaa64.efi```.  Note that
@@ -178,26 +220,6 @@ Set ```OS loader? y```.
 Set ```Arguments:``` (empty).
 
 Set ```Description: CoreOS```, or whatever you like.
-
-### Start Up
-
-Navigate back to the main UEFI boot menu and choose the new ```CoreOS``` menu
-item.  After some loading and a few 'getenv' error messages the CoreOS grub menu
-should appear.  Choose ```APM Mustang```.  After some delay at a blank screen
-while loading the system should come up with a CoreOS system console on the
-Mustang UART at ttyS0,115200n8.
-
-## Huawei D02 Developer Board
-
-For info on the D02 board see http://open-estuary.org/.
-
-Coming...
-
-## General Notes
-
-### CoreOS Login
-
-  user='core', password='c'
 
 ### Debugging
 
