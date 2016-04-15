@@ -104,7 +104,7 @@ The UEFI and Debian consoles will be on the expansion header UART (ttyAMA3) at
 115200 baud.
 
 You can try my program-hikey utility included in this release if you like.
-You may need to set the ```builds_root``` and ```DEVICE``` variables.  These
+You may need to set the ```DEVICE``` and/or ```DL_ROOT``` variables.  These
 commands should install everything needed to boot to Debian from the eMMC:
 
     program-hikey --download
