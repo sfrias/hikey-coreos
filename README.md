@@ -15,7 +15,7 @@
 
 ## Info
 
-The releases here are unofficial CoreOS ARM64 disk images that I've build for
+The releases here are unofficial CoreOS ARM64 disk images that I've built for
 testing CoreOS on various ARM64 platforms.
 
 You can always find the latest version of this document, and some other useful
@@ -45,12 +45,12 @@ I use the binary releases provided by Linaro:
     wget http://releases.linaro.org/components/kernel/uefi-linaro/latest/release/qemu64/QEMU_EFI.fd
 
 To run single node tests I run QEMU as shown below.  This should work with
-either a pre-built ARM64 CoreOS image or the coreos_developer_image.bin build
-with the CoreOS SDK using ```build_image board=arm64-usr dev```:
+either a pre-built ARM64 CoreOS image or an image built with the CoreOS SDK
+using ```build_image board=arm64-usr```:
 
     qemu-system-aarch64 -machine virt -cpu cortex-a57 -machine type=virt -nographic -m 2048 \
       -bios QEMU_EFI.fd \
-      -drive if=none,id=blk,file=arm64_coreos_developer_image_${version}.bin \
+      -drive if=none,id=blk,file=arm64_coreos_${type}_image_${version}.bin \
       -device virtio-blk-device,drive=blk \
       -net user,hostfwd=tcp::10022-:22,hostname=core-arm64 \
       -device virtio-net-device,vlan=0
@@ -62,7 +62,7 @@ To run the ARM64 VM as a node in a cluster use QEMU's bridged networking:
 
     qemu-system-aarch64 -machine virt -cpu cortex-a57 -machine type=virt -nographic -m 2048 \
       -bios QEMU_EFI.fd \
-      -drive if=none,id=blk,file=arm64_coreos_developer_image_${version}.bin \
+      -drive if=none,id=blk,file=arm64_coreos_${type}_image_${version}.bin \
       -device virtio-blk-device,drive=blk \
       -netdev bridge,br=br0,id=net0 \
       -device virtio-net-device,netdev=net0,id=nic0
@@ -79,8 +79,8 @@ info on the HiKey board see https://www.96boards.org/products/ce/hikey/.
 
 You'll need a 6.0 GiB or larger Micro SD card for the HiKey.
 
-    cat arm64_coreos_developer_image_${version}.bin.xz | xz -d > arm64_coreos_developer_image_${version}.bin
-    dd if=arm64_coreos_developer_image_${version}.bin of=/dev/sdX bs=4M oflag=sync
+    cat arm64_coreos_${type}_image_${version}.bin.xz | xz -d > arm64_coreos_${type}_image_${version}.bin
+    dd if=arm64_coreos_${type}_image_${version}.bin of=/dev/sdX bs=4M oflag=sync
 
 ### eMMC Setup
 
@@ -151,8 +151,8 @@ to these:
 Write the CoreOS ARM64 disk image to a 8 GiB or larger USB storage device, or a
 Seagate ST1000LM024 hard disk using a USB to SATA adapter on your host:
 
-    cat arm64_coreos_developer_image_${version}.bin.xz | xz -d > arm64_coreos_developer_image_${version}.bin
-    dd if=arm64_coreos_developer_image_${version}.bin of=/dev/sdX
+    cat arm64_coreos_${type}_image_${version}.bin.xz | xz -d > arm64_coreos_${type}_image_${version}.bin
+    dd if=arm64_coreos_${type}_image_${version}.bin of=/dev/sdX
 
 To add a boot menu entry, boot with the CoreOS storage device installed then
 follow [Add A UEFI Boot Option](#add-a-uefi-boot-option).
@@ -175,8 +175,8 @@ Write the CoreOS ARM64 disk image to either the Mustang hard disk using a USB to
 adapter on your host, or to a USB storage device.  Booting CoreOS from the
 Mustang SD Card currently does not work:
 
-    cat arm64_coreos_developer_image_${version}.bin.xz | xz -d > arm64_coreos_developer_image_${version}.bin
-    dd if=arm64_coreos_developer_image_${version}.bin of=/dev/sdX
+    cat arm64_coreos_${type}_image_${version}.bin.xz | xz -d > arm64_coreos_${type}_image_${version}.bin
+    dd if=arm64_coreos_${type}_image_${version}.bin of=/dev/sdX
 
 ### UEFI Setup
 
@@ -225,7 +225,7 @@ Set ```Description: CoreOS```, or whatever you like.
 
 To inspect the CoreOS disk image use somthing like:
 
-    sudo kpartx -v -a -s arm64_coreos_developer_image_${version}.bin
+    sudo kpartx -v -a -s arm64_coreos_${type}_image_${version}.bin
     sudo mount /dev/mapper/loopXp1 /tmp/boot
     sudo mount /dev/mapper/loopXp3 /tmp/usr
     sudo mount /dev/mapper/loopXp9 /tmp/rootfs
