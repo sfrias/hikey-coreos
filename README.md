@@ -1,6 +1,6 @@
 # CoreOS ARM64 Notes
 
-2016.04.07
+2016.04.18
 
 ## Contents
 
@@ -8,8 +8,8 @@
 [License](#license)<br>
 [QEMU](#qemu)<br>
 [Hikey Board](#hikey-board)<br>
-[APM X-Gene Mustang](#apm-x-gene-mustang)<br>
 [Huawei D02 Developer Board](#huawei-d02-developer-board)<br>
+[APM X-Gene Mustang](#apm-x-gene-mustang)<br>
 [General Notes](#general-notes)<br>
 [Add A UEFI Boot Option](#add-a-uefi-boot-option)<br>
 
@@ -132,39 +132,6 @@ should appear.  Choose ```96boards hikey```. After some delay at a blank screen
 while loading the system should come up with a CoreOS system console on the
 expansion header UART at ttyAMA3,115200.
 
-## APM X-Gene Mustang
-
-The APM Mustang is supported in ```hikey-coreos-9``` and later releses.
-
-### Storage Setup
-
-Write the CoreOS ARM64 disk image to either the Mustang hard disk using a USB to SATA
-adapter on your host, or to a USB storage device.  Booting CoreOS from the
-Mustang SD Card currently does not work:
-
-    cat arm64_coreos_developer_image_${version}.bin.xz | xz -d > arm64_coreos_developer_image_${version}.bin
-    dd if=arm64_coreos_developer_image_${version}.bin of=/dev/sdX
-
-### UEFI Setup
-
-Install UEFI firmware version 1.15.10 available from https://myapm.apm.com.
-Newer firmware versions could also work.  For more info on installation see the
-Mustang software guide that comes with the firmware update.  Older firmware
-released by the Fedora project will not work with these CoreOS images.
-
-    UpgradeFirmware.efi apm_upgrade_tianocore.cmd
-
-To add a boot menu entry, boot with the CoreOS storage device installed then
-follow [Add A UEFI Boot Option](#add-a-uefi-boot-option).
-
-### Start Up
-
-Navigate back to the main UEFI boot menu and choose the new ```CoreOS``` menu
-item.  After some loading and a few 'getenv' error messages the CoreOS grub menu
-should appear.  Choose ```APM Mustang```.  After some delay at a blank screen
-while loading the system should come up with a CoreOS system console on the
-UART at ttyS0,115200n8.
-
 ## Huawei D02 Developer Board
 
 The D02 Developer board is supported in ```hikey-coreos-10``` and later releses.
@@ -195,6 +162,39 @@ follow [Add A UEFI Boot Option](#add-a-uefi-boot-option).
 Navigate back to the main UEFI boot menu and choose the new ```CoreOS``` menu
 item.  After some loading and a few 'getenv' error messages the CoreOS grub menu
 should appear.  Choose ```Huawei D02```.  After some delay at a blank screen
+while loading the system should come up with a CoreOS system console on the
+UART at ttyS0,115200n8.
+
+## APM X-Gene Mustang
+
+The APM Mustang is supported in ```hikey-coreos-9``` and later releses.
+
+### Storage Setup
+
+Write the CoreOS ARM64 disk image to either the Mustang hard disk using a USB to SATA
+adapter on your host, or to a USB storage device.  Booting CoreOS from the
+Mustang SD Card currently does not work:
+
+    cat arm64_coreos_developer_image_${version}.bin.xz | xz -d > arm64_coreos_developer_image_${version}.bin
+    dd if=arm64_coreos_developer_image_${version}.bin of=/dev/sdX
+
+### UEFI Setup
+
+Install UEFI firmware version 1.15.10 available from https://myapm.apm.com.
+Newer firmware versions could also work.  For more info on installation see the
+Mustang software guide that comes with the firmware update.  Older firmware
+released by the Fedora project will not work with these CoreOS images.
+
+    UpgradeFirmware.efi apm_upgrade_tianocore.cmd
+
+To add a boot menu entry, boot with the CoreOS storage device installed then
+follow [Add A UEFI Boot Option](#add-a-uefi-boot-option).
+
+### Start Up
+
+Navigate back to the main UEFI boot menu and choose the new ```CoreOS``` menu
+item.  After some loading and a few 'getenv' error messages the CoreOS grub menu
+should appear.  Choose ```APM Mustang```.  After some delay at a blank screen
 while loading the system should come up with a CoreOS system console on the
 UART at ttyS0,115200n8.
 
